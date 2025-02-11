@@ -106,13 +106,13 @@ class TarotDeck:
                               f"img/minor_arcana/{image_name}"))
 
             minor_arcana.append(TarotCard(f"{suit} Page", f"Page of {suit}", f"The beginning and exploration of {suit}",
-                                          f"img/minor_arcana/{suit}_Page.png"))
+                                          f"img/minor_arcana/{suit}_Page.jpg"))
             minor_arcana.append(TarotCard(f"{suit} Knight", f"Knight of {suit}", f"The action and pursuit of {suit}",
-                                          f"img/minor_arcana/{suit}_Knight.png"))
+                                          f"img/minor_arcana/{suit}_Knight.jpg"))
             minor_arcana.append(TarotCard(f"{suit} Queen", f"Queen of {suit}", f"The wisdom and care of {suit}",
-                                          f"img/minor_arcana/{suit}_Queen.png"))
+                                          f"img/minor_arcana/{suit}_Queen.jpg"))
             minor_arcana.append(TarotCard(f"{suit} King", f"King of {suit}", f"The control and leadership of {suit}",
-                                          f"img/minor_arcana/{suit}_King.png"))
+                                          f"img/minor_arcana/{suit}_King.jpg"))
 
         return major_arcana + minor_arcana
 
@@ -215,6 +215,9 @@ class TarotDealCard:
                 "image1": ("IMAGE",),
                 "image2": ("IMAGE",),
                 "image3": ("IMAGE",),
+                "card1": ("STRING", {"default": '0'}),
+                "card2": ("STRING", {"default": '0'}),
+                "card3": ("STRING", {"default": '0'}),
             },
         }
 
@@ -225,7 +228,7 @@ class TarotDealCard:
     CATEGORY = "HailuoTarot"
     DESCRIPTION = "tarot card deal"
 
-    def card_deal(self, card_num: int,image1,image2,image3, text='', cur_round="1", all_flag="0"):
+    def card_deal(self, card_num: int,image1,image2,image3, card1,card2,card3, text='', cur_round="1", all_flag="0"):
         """
         根据输入的参数进行塔罗牌抽取、图像处理和文本生成。
         :param card_num: 每轮抽取的塔罗牌数量。
@@ -267,16 +270,19 @@ class TarotDealCard:
             tar = self.convert_to_target_format(img)
             result["images"][0]=tar
             result["texts"][0]=txt+","
+            all_card_name=all_card_name+txt+","
         if cur_round==2:
             img, txt = self.load_card_and_text()
             tar = self.convert_to_target_format(img)
             result["images"][1]=tar
             result["texts"][1]=txt
+            all_card_name = all_card_name + txt + ","
         if cur_round == 3:
             img, txt = self.load_card_and_text()
             tar = self.convert_to_target_format(img)
             result["images"][2] = tar
             result["texts"][2]= txt
+            all_card_name = all_card_name + txt + ","
         # 循环执行塔罗牌相关作业
         if all_flag==1:
             for i in range(cur_round):
@@ -289,7 +295,7 @@ class TarotDealCard:
                 result["images"][i] = tar
                 result["texts"][i] = txt
                 all_card_name=all_card_name+txt+","
-        
+
         # 返回结果
         return (result["images"][0], result["images"][1], result["images"][2], \
             result["texts"][0], result["texts"][1], result["texts"][2],cur_round,all_card_name)
@@ -343,194 +349,6 @@ class TarotDealCard:
         result_img = self.convert_to_target_format(result_img)
         return result_img
 
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
-import os
-import torch
-import numpy as np
-
-class Txt2Img:
-    @classmethod
-    def INPUT_TYPES(s):
-        return {
-            "required": {
-                "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff,
-                                 "tooltip": "The random seed used for creating the noise."}),
-                "content": ("STRING", {"default": ''}),
-                "font": ("STRING", {"default": ''}),
-                "font_size": ("STRING", {"default": '40'}),
-                "font_color": ("STRING", {"default": 'black'}),
-                "transparent": ("STRING", {"default": '1'}),
-                "bg_color": ("STRING", {"default": ''}),
-                "max_chars_per_line": ("STRING", {"default": '100'}),  # 新增换行长度参数
-            },
-        }
-
-    RETURN_TYPES = ("IMAGE", "STRING")
-    RETURN_NAMES = ("result_img", "content")
-    FUNCTION = "txt_2_img"
-    OUTPUT_NODE = True
-    CATEGORY = "HailuoTarot"
-    DESCRIPTION = "tools for generate"
-
-    def __init__(self):
-        # Windows系统默认字体路径
-        self.windows_font_path = "C:/Windows/Fonts"
-        # 常见字体名称与文件名的映射
-        self.font_mapping = {
-            "Arial": "arial.ttf",
-            "Times New Roman": "times.ttf",
-            "Courier New": "cour.ttf",
-            "Verdana": "verdana.ttf",
-            "Tahoma": "tahoma.ttf",
-            "SimSun": "simsun.ttc",  # 宋体
-            "SimHei": "simhei.ttf",  # 黑体
-        }
-
-    def _find_font_file(self, font_name):
-        """根据字体名称查找字体文件路径"""
-        # 检查字体名称是否在映射表中
-        if font_name in self.font_mapping:
-            font_file = self.font_mapping[font_name]
-            font_path = os.path.join(self.windows_font_path, font_file)
-            if os.path.exists(font_path):
-                return font_path
-
-        # 如果未找到，返回None，使用默认字体
-        return None
-
-    def _wrap_text(self, text, max_chars_per_line):
-        """将文本按最大字符数换行（支持中文字符）"""
-        lines = []
-        current_line = ""
-
-        for char in text:
-            # 检查当前行加上新字符是否超过最大字符数
-            if len(current_line) + len(char) <= max_chars_per_line:
-                current_line += char
-            else:
-                # 如果超过，将当前行加入结果，并开始新行
-                lines.append(current_line)
-                current_line = char
-
-        # 添加最后一行
-        if current_line:
-            lines.append(current_line)
-
-        return lines
-
-    def txt_2_img(self, seed,content, font, font_size, font_color, transparent, bg_color, max_chars_per_line):
-        """
-        将文字转换为图片
-        :param content: 文字内容
-        :param font: 字体名称
-        :param font_size: 字体大小（字符串类型）
-        :param font_color: 文字颜色（字符串类型）
-        :param transparent: 是否透明背景，"1"表示透明
-        :param bg_color: 背景颜色（字符串类型）
-        :param max_chars_per_line: 每行最大字符数（字符串类型）
-        :return: (PIL Image对象, 文字内容)
-        """
-        # 将font_size和max_chars_per_line转换为整数
-        try:
-            font_size = int(font_size)
-        except ValueError:
-            font_size = 40  # 默认值
-
-        try:
-            max_chars_per_line = int(max_chars_per_line)
-        except ValueError:
-            max_chars_per_line = 100  # 默认值
-
-        # 根据字体名称查找字体文件
-        font_path = self._find_font_file(font)
-        if font_path is None:
-            print(f"警告：未找到字体 '{font}'，将使用默认字体")
-            font = ImageFont.load_default()
-        else:
-            # 使用抗锯齿字体
-            font = ImageFont.truetype(font_path, font_size)
-
-        # 将文本按指定字符数换行
-        wrapped_lines = self._wrap_text(content, max_chars_per_line)
-
-        # 计算文本尺寸
-        temp_image = Image.new("RGBA", (1, 1))
-        temp_draw = ImageDraw.Draw(temp_image)
-        line_heights = []
-        max_line_width = 0
-
-        for line in wrapped_lines:
-            text_bbox = temp_draw.textbbox((0, 0), line, font=font)
-            line_width = text_bbox[2] - text_bbox[0]
-            line_height = text_bbox[3] - text_bbox[1]
-            line_heights.append(line_height)
-            if line_width > max_line_width:
-                max_line_width = line_width
-
-        total_height = sum(line_heights) + 20 * (len(wrapped_lines) - 1)  # 行间距为20
-
-        # 设置背景颜色
-        if transparent == "1":
-            background_color = (0, 0, 0, 0)  # 透明背景
-        else:
-            # 根据bg_color参数设置背景颜色
-            color_mapping = {
-                "green": (0, 255, 0),  # 绿色
-                "red": (255, 0, 0),  # 红色
-                "white": (255, 255, 255),  # 白色
-                "black": (0, 0, 0),  # 黑色
-            }
-            background_color = color_mapping.get(bg_color, (255, 255, 255))  # 默认白色
-
-        # 创建图像
-        img = Image.new("RGBA", (int(max_line_width + 40), int(total_height + 40)), background_color)
-        draw = ImageDraw.Draw(img)
-
-        # 设置文字颜色
-        font_color_mapping = {
-            "black": (0, 0, 0, 255),  # 黑色
-            "red": (255, 0, 0, 255),  # 红色
-            "green": (0, 255, 0, 255),  # 绿色
-            "blue": (0, 0, 255, 255),  # 蓝色
-            "white": (255, 255, 255, 255),  # 白色
-        }
-        text_fill = font_color_mapping.get(font_color, (0, 0, 0, 255))  # 默认黑色
-
-        # 绘制文字（左对齐）
-        y_offset = 20  # 初始垂直偏移
-        for line in wrapped_lines:
-            text_bbox = temp_draw.textbbox((0, 0), line, font=font)
-            line_height = text_bbox[3] - text_bbox[1]
-            draw.text((20, y_offset), line, font=font, fill=text_fill)  # 左对齐，水平偏移20
-            y_offset += line_height + 20  # 行间距为20
-
-        # 应用抗锯齿滤镜
-        img = img.filter(ImageFilter.SMOOTH_MORE)
-
-        # 将PIL Image转换为PyTorch Tensor
-        img_np = np.array(img).astype(np.float32) / 255.0
-        img_tensor = torch.from_numpy(img_np).unsqueeze(0)
-
-        return (img_tensor, content)
-
-if __name__ == "__main__":
-    converter = Txt2Img()
-    content = "这是一个测试文本，用于验证换行功能。如果文本长度超过指定字符数，则自动换行并保持左对齐。这是一个测试文本，用于验证换行功能。如果文本长度超过指定字符数，则自动换行并保持左对齐。"
-    font = "SimHei"  # 字体名称
-    font_size = "70"  # 字体大小
-    font_color = "white"  # 文字颜色
-    transparent = "1"  # 透明背景
-    bg_color = "green"  # 背景颜色（仅在非透明时生效）
-    max_chars_per_line = "20"  # 每行最大字符数
-
-    result_img, content = converter.txt_2_img(content, font, font_size, font_color, transparent, bg_color,
-                                               max_chars_per_line)
-
-    # 显示图片
-    pil_img = Image.fromarray((result_img.squeeze(0).numpy() * 255).astype(np.uint8))
-    pil_img.show()
-
-    print("文字内容：", content)
 
 
 
