@@ -263,6 +263,9 @@ class TarotDealCard:
         result["images"][0] = image1
         result["images"][1] = image2
         result["images"][2] = image3
+        result["texts"][0] = card1
+        result["texts"][1] = card2
+        result["texts"][2] = card3
         print(f"current round:{cur_round}")
         print(f"current allflag:{all_flag}")
         if cur_round==1:
