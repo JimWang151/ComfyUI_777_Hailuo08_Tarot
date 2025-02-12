@@ -150,7 +150,6 @@ def load_image(drawn_cards: List[TarotCard]) -> Tuple[List[Image.Image], List[in
     # 初始化图像列表和翻转标志列表
     image_list = []
     flip_flags = []
-    print("这里开始加载图片")
     # 设置随机种子为当前时间戳，确保每次运行结果不同
     random.seed(os.times().elapsed)  # 使用系统时间作为随机种子
 
@@ -171,9 +170,7 @@ def load_image(drawn_cards: List[TarotCard]) -> Tuple[List[Image.Image], List[in
         if random.random() < 0.35:  # random.random() 生成 [0, 1) 之间的随机数
             img = img.rotate(180)  # 将图像旋转 180 度
             flip_flags.append(1)  # 记录翻转标志为 1
-            print("图片反转")
         else:
-            print("图片未反转")
             flip_flags.append(0)  # 记录翻转标志为 0
 
         # 将图像添加到列表中
@@ -266,8 +263,10 @@ class TarotDealCard:
         result["texts"][0] = card1
         result["texts"][1] = card2
         result["texts"][2] = card3
-        print(f"current round:{cur_round}")
-        print(f"current allflag:{all_flag}")
+
+        print(f"current card1:{result["texts"][0]}")
+        print(f"current card2:{result["texts"][1]}")
+        print(f"current card3:{result["texts"][2]}")
         if cur_round==1:
             img, txt = self.load_card_and_text()
             tar = self.convert_to_target_format(img)
@@ -291,7 +290,6 @@ class TarotDealCard:
             for i in range(cur_round):
             # 抽取塔罗牌对象
             # 转换为目标格式
-                print(f"加载3张图片:{all_flag}")
                 img,txt=self.load_card_and_text()
                 tar = self.convert_to_target_format(img)
             # 更新结果
@@ -308,7 +306,6 @@ class TarotDealCard:
         drawn_cards = self.load_tarotCard(1)
         images, flags = load_image(drawn_cards)
         txt= load_text(drawn_cards)
-        print(f"加载基本信息")
         # 合并塔罗牌图片
         img = image_stitch(images)
 
@@ -332,7 +329,6 @@ class TarotDealCard:
         """
         if isinstance(image, torch.Tensor):
             return image
-        print(f"图片转换")
         tensor = to_tensor(image)  # 转换为 [C, H, W]
         tensor = tensor.permute(1, 2, 0)  # 转换为 [H, W, C]
         tensor = tensor.unsqueeze(0)  # 添加 batch 维度，变为 [1, H, W, C]
