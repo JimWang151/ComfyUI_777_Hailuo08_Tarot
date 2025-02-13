@@ -263,10 +263,6 @@ class TarotDealCard:
         result["texts"][0] = card1
         result["texts"][1] = card2
         result["texts"][2] = card3
-
-        print(f"current card1:{result["texts"][0]}")
-        print(f"current card2:{result["texts"][1]}")
-        print(f"current card3:{result["texts"][2]}")
         if cur_round==1:
             img, txt = self.load_card_and_text()
             tar = self.convert_to_target_format(img)
