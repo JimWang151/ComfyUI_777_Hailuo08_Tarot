@@ -13,10 +13,10 @@ python = sys.executable
 
 
 
-from .HailuoTarot import TarotDealCard
-
+from .HailuoTarot import TarotDealCard,LoadCardImage
 NODE_CLASS_MAPPINGS = {
-    "TarotDealCard":TarotDealCard
+    "TarotDealCard":TarotDealCard,
+    "LoadCardImage":LoadCardImage
 }
 
 

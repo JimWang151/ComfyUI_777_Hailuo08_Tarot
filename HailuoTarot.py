@@ -211,23 +211,23 @@ class TarotDealCard:
                 "text": ("STRING", {"default":''}),
                 "cur_round": ("STRING", {"default":'1'}),
                 "all_flag": ("STRING", {"default": '0'}),
-                "image1": ("IMAGE",),
-                "image2": ("IMAGE",),
-                "image3": ("IMAGE",),
+                "image_path_1": ("STRING", {"default":''}),
+                "image_path_2": ("STRING", {"default":''}),
+                "image_path_3": ("STRING", {"default":''}),
                 "card1": ("STRING", {"default": '0'}),
                 "card2": ("STRING", {"default": '0'}),
                 "card3": ("STRING", {"default": '0'}),
             },
         }
 
-    RETURN_TYPES = ("IMAGE","IMAGE","IMAGE","STRING","STRING","STRING","STRING","STRING")
-    RETURN_NAMES = ("Card_NO_1","Card_NO_2","Card_NO_3","CARD_DESC_1","CARD_DESC_2","CARD_DESC_3","cur_round","all_card_name")
+    RETURN_TYPES = ("IMAGE","IMAGE","IMAGE","STRING","STRING","STRING","STRING","STRING","STRING","STRING","STRING")
+    RETURN_NAMES = ("Card_NO_1","Card_NO_2","Card_NO_3","CARD_DESC_1","CARD_DESC_2","CARD_DESC_3","CAR_NAME_1","CAR_NAME_2","CAR_NAME_3","cur_round","all_card_name")
     FUNCTION = "card_deal"
     OUTPUT_NODE = True
     CATEGORY = "HailuoTarot"
     DESCRIPTION = "tarot card deal"
 
-    def card_deal(self, card_num: int,image1,image2,image3, card1,card2,card3, text='', cur_round="1", all_flag="0"):
+    def card_deal(self, card_num: int,image_path_1,image_path_2,image_path_3, card1,card2,card3,text='', cur_round="1", all_flag="0"):
         """
         根据输入的参数进行塔罗牌抽取、图像处理和文本生成。
         :param card_num: 每轮抽取的塔罗牌数量。
@@ -257,7 +257,8 @@ class TarotDealCard:
         # 初始化返回的图像和文本
         result = {
             "images": [self.get_blank_img() for _ in range(3)],
-            "texts": ["" for _ in range(3)]
+            "texts": ["" for _ in range(3)],
+            "names": ["" for _ in range(3)]
         }
         result["texts"][0] = card1
         result["texts"][1] = card2
@@ -265,52 +266,70 @@ class TarotDealCard:
         if card1 is None or card1 == "":
             result["images"][0]=self.get_blank_img()
         else:
-            result["images"][0] = image1
+            img, txt, name = self.load_card_and_text(image_path_1)
+            tar = self.convert_to_target_format(img)
+            result["images"][0] = tar
+            result["texts"][0] = txt + ","
+            result["names"][0] = name
         if card2 is None or card2 == "":
             result["images"][1]=self.get_blank_img()
         else:
-            result["images"][1] = image2
+            img, txt, name = self.load_card_and_text(image_path_2)
+            tar = self.convert_to_target_format(img)
+            result["images"][1] = tar
+            result["texts"][1] = txt
+            result["names"][1] = name
         if card3 is None or card3 == "":
             result["images"][2]=self.get_blank_img()
         else:
-            result["images"][2] = image3
+            img, txt, name = self.load_card_and_text(image_path_3)
+            tar = self.convert_to_target_format(img)
+            result["images"][2] = tar
+            result["texts"][2] = txt
+            result["names"][2] = name
         if cur_round==1:
-            img, txt = self.load_card_and_text()
+            img, txt,name = self.load_card_and_text("")
             tar = self.convert_to_target_format(img)
             result["images"][0]=tar
             result["texts"][0]=txt+","
+            result["names"][0]=name
             all_card_name=all_card_name+txt+","
         if cur_round==2:
-            img, txt = self.load_card_and_text()
+            img, txt,name = self.load_card_and_text("")
             tar = self.convert_to_target_format(img)
             result["images"][1]=tar
             result["texts"][1]=txt
+            result["names"][1]=name
             all_card_name = all_card_name + txt + ","
         if cur_round == 3:
-            img, txt = self.load_card_and_text()
+            img, txt,name = self.load_card_and_text("")
             tar = self.convert_to_target_format(img)
             result["images"][2] = tar
             result["texts"][2]= txt
+            result["names"][2]=name
             all_card_name = all_card_name + txt + ","
         # 循环执行塔罗牌相关作业
         if all_flag==1:
             for i in range(cur_round):
             # 抽取塔罗牌对象
             # 转换为目标格式
-                img,txt=self.load_card_and_text()
+                img,txt,name=self.load_card_and_text("")
                 tar = self.convert_to_target_format(img)
             # 更新结果
                 result["images"][i] = tar
                 result["texts"][i] = txt
+                result["names"][i] = name
                 all_card_name=all_card_name+txt+","
 
         # 返回结果
         return (result["images"][0], result["images"][1], result["images"][2], \
-            result["texts"][0], result["texts"][1], result["texts"][2],cur_round,all_card_name)
+            result["texts"][0], result["texts"][1], result["texts"][2],\
+            result["names"][0], result["names"][1], result["names"][2],cur_round,all_card_name)
 
-    def load_card_and_text(self):
+    def load_card_and_text(self,path=''):
 
-        drawn_cards = self.load_tarotCard(1)
+        drawn_cards = self.load_tarotCard(1,path)
+        name=drawn_cards[0].image_path
         images, flags = load_image(drawn_cards)
         txt= load_text(drawn_cards)
         # 合并塔罗牌图片
@@ -319,15 +338,22 @@ class TarotDealCard:
         if str(flags[0]) == "1":
             txt=txt + "(Reversed)"
 
-        return img,txt
+        return img,txt,name,
 
     # 随机读取塔罗牌对象列表
-    def load_tarotCard(self, card_nums: int) -> List[TarotCard]:
+    def load_tarotCard(self, card_nums: int,path='') -> List[TarotCard]:
         tarotDeck = TarotDeck()
         tarotDeck.shuffle()
         if card_nums <= 0:
             card_nums=1
         drawn_cards = tarotDeck.draw(card_nums)
+        # 根据路径抽排
+        if path!='':
+            for tarCar in tarotDeck:
+                if tarCar.image_path==path:
+                  drawn_cards = tarCar
+                  return drawn_cards
+
         return drawn_cards
 
     def convert_to_target_format(self,image):
@@ -355,6 +381,42 @@ class TarotDealCard:
         result_img = self.convert_to_target_format(result_img)
         return result_img
 
+class LoadCardImage:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "image_path_1": ("STRING", {"default":''}),
+                "image_path_2": ("STRING", {"default":''}),
+                "image_path_3": ("STRING", {"default":''}),
+            },
+        }
 
+    RETURN_TYPES = ("IMAGE","IMAGE","IMAGE")
+    RETURN_NAMES = ("img1","img2","img3")
+    FUNCTION = "load_card_img"
+    OUTPUT_NODE = True
+    CATEGORY = "HailuoTarot"
+    DESCRIPTION = "tarot card deal"
+
+    def load_card_img(self, image_path_1,image_path_2,image_path_3):
+
+        tool=TarotDealCard()
+        img, txt, name = tool.load_card_and_text(image_path_1)
+        tar = tool.convert_to_target_format(img)
+        imag1 = tar
+
+
+        img, txt, name = tool.load_card_and_text(image_path_2)
+        tar = tool.convert_to_target_format(img)
+        imag2=tar
+
+
+        img, txt, name = tool.load_card_and_text(image_path_3)
+        tar = tool.convert_to_target_format(img)
+        imag3= tar
+
+
+        return (imag1, imag2, imag3)
 
 
