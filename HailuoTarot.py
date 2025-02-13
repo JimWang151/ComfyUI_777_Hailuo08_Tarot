@@ -8,6 +8,10 @@ from torchvision.transforms.functional import to_tensor, to_pil_image
 from typing import List
 from PIL import Image
 import time
+import random
+from PIL import Image
+from typing import List, Tuple
+
 class TarotCard:
     def __init__(self, name: str, description: str, meaning: str, image_path: str):
         self.name = name
@@ -135,9 +139,7 @@ def load_text(drawn_cards: List[TarotCard]) -> str:
     # return "\n".join([f"{card.name}: {card.description}\nAnalysis: {card.meaning}" for card in drawn_cards])
 
 # 读取随机抽取的塔罗牌图片结果集
-import random
-from PIL import Image
-from typing import List, Tuple
+
 
 def load_image(drawn_cards: List[TarotCard]) -> Tuple[List[Image.Image], List[int]]:
     """
@@ -257,12 +259,21 @@ class TarotDealCard:
             "images": [self.get_blank_img() for _ in range(3)],
             "texts": ["" for _ in range(3)]
         }
-        result["images"][0] = image1
-        result["images"][1] = image2
-        result["images"][2] = image3
         result["texts"][0] = card1
         result["texts"][1] = card2
         result["texts"][2] = card3
+        if card1 is None or s == "":
+            result["images"][0]=self.get_blank_img()
+        else:
+            result["images"][0] = image1
+        if card2 is None or s == "":
+            result["images"][1]=self.get_blank_img()
+        else:
+            result["images"][1] = image2
+        if card3 is None or s == "":
+            result["images"][2]=self.get_blank_img()
+        else:
+            result["images"][2] = image3
         if cur_round==1:
             img, txt = self.load_card_and_text()
             tar = self.convert_to_target_format(img)
