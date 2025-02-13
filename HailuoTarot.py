@@ -262,15 +262,15 @@ class TarotDealCard:
         result["texts"][0] = card1
         result["texts"][1] = card2
         result["texts"][2] = card3
-        if card1 is None or s == "":
+        if card1 is None or card1 == "":
             result["images"][0]=self.get_blank_img()
         else:
             result["images"][0] = image1
-        if card2 is None or s == "":
+        if card2 is None or card2 == "":
             result["images"][1]=self.get_blank_img()
         else:
             result["images"][1] = image2
-        if card3 is None or s == "":
+        if card3 is None or card3 == "":
             result["images"][2]=self.get_blank_img()
         else:
             result["images"][2] = image3
