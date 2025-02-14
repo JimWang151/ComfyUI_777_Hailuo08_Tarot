@@ -253,7 +253,8 @@ class TarotDealCard:
         # 当 all_flag = 1 时，cur_round = 3
         if all_flag == 1:
             cur_round = 3
-
+        print(f"i当前参数:img_path_1:{image_path_1},img_path_2:{image_path_2},image_path_3:{image_path_2}")
+        print(f"i当前参数:card1:{card1},card2:{card2},card3:{card3}")
         # 初始化返回的图像和文本
         result = {
             "images": [self.get_blank_img() for _ in range(3)],
@@ -341,18 +342,18 @@ class TarotDealCard:
         return img,txt,name,
 
     # 随机读取塔罗牌对象列表
-    def load_tarotCard(self, card_nums: int,path='') -> List[TarotCard]:
+    def load_tarotCard(self, card_nums: int, path='') -> List[TarotCard]:
         tarotDeck = TarotDeck()
         tarotDeck.shuffle()
         if card_nums <= 0:
-            card_nums=1
+            card_nums = 1
         drawn_cards = tarotDeck.draw(card_nums)
         # 根据路径抽排
-        if path!='':
-            for tarCar in tarotDeck:
-                if tarCar.image_path==path:
-                  drawn_cards = tarCar
-                  return drawn_cards
+        if path != '':
+            for tarCar in tarotDeck.create_deck():
+                if tarCar.image_path == path:
+                    drawn_cards[0] = tarCar
+                    return drawn_cards
 
         return drawn_cards
 
