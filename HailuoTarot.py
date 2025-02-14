@@ -270,7 +270,7 @@ class TarotDealCard:
             img, txt, name = self.load_card_and_text(image_path_1)
             tar = self.convert_to_target_format(img)
             result["images"][0] = tar
-            result["texts"][0] = txt + ","
+            result["texts"][0] = txt
             result["names"][0] = name
         if card2 is None or card2 == "":
             result["images"][1]=self.get_blank_img()
@@ -292,7 +292,7 @@ class TarotDealCard:
             img, txt,name = self.load_card_and_text("")
             tar = self.convert_to_target_format(img)
             result["images"][0]=tar
-            result["texts"][0]=txt+","
+            result["texts"][0]=txt
             result["names"][0]=name
             all_card_name=all_card_name+txt+","
         if cur_round==2:
@@ -334,6 +334,7 @@ class TarotDealCard:
         images, flags = load_image(drawn_cards)
         txt= load_text(drawn_cards)
         # 合并塔罗牌图片
+        txt = txt.rstrip(',') if txt.endswith(',') else txt
         img = image_stitch(images)
 
         if str(flags[0]) == "1":
