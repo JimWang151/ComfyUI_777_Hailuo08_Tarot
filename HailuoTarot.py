@@ -351,6 +351,14 @@ class TarotDealCard:
         drawn_cards = tarotDeck.draw(card_nums)
         # 根据路径抽排
         if path != '':
+            if os.name == 'posix':  # Linux 或 macOS
+                path = path.replace('\\', '/')  # 确保路径使用 '/'
+                if not path.startswith('/'):
+                    path = '/' + path  # 确保路径以 '/' 开头（假设是绝对路径）
+            elif os.name == 'nt':  # Windows
+                path = path.replace('/', '\\')  # 确保路径使用 '\'
+                if not path.startswith('\\') and ':' not in path:
+                    path = '\\\\' + path  # 确保路径以 '\\\' 开头（假设是 UNC 路径）
             for tarCar in tarotDeck.create_deck():
                 if tarCar.image_path == path:
                     drawn_cards[0] = tarCar
