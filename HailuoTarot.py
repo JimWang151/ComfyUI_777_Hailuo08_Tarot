@@ -253,7 +253,7 @@ class TarotDealCard:
         # 当 all_flag = 1 时，cur_round = 3
         if all_flag == 1:
             cur_round = 3
-        print(f"i当前参数:img_path_1:{image_path_1},img_path_2:{image_path_2},image_path_3:{image_path_2}")
+        print(f"i当前参数:img_path_1:{image_path_1},img_path_2:{image_path_2},image_path_3:{image_path_3}")
         print(f"i当前参数:card1:{card1},card2:{card2},card3:{card3}")
         # 初始化返回的图像和文本
         result = {
@@ -264,6 +264,7 @@ class TarotDealCard:
         result["texts"][0] = card1
         result["texts"][1] = card2
         result["texts"][2] = card3
+
         if card1 is None or card1 == "":
             result["images"][0]=self.get_blank_img()
         else:
@@ -272,6 +273,7 @@ class TarotDealCard:
             result["images"][0] = tar
             result["texts"][0] = txt
             result["names"][0] = name
+            
         if card2 is None or card2 == "":
             result["images"][1]=self.get_blank_img()
         else:
@@ -280,6 +282,7 @@ class TarotDealCard:
             result["images"][1] = tar
             result["texts"][1] = txt
             result["names"][1] = name
+            
         if card3 is None or card3 == "":
             result["images"][2]=self.get_blank_img()
         else:
@@ -288,50 +291,91 @@ class TarotDealCard:
             result["images"][2] = tar
             result["texts"][2] = txt
             result["names"][2] = name
+            
         if cur_round==1:
-            img, txt,name = self.load_card_and_text("")
+            img, txt,name = self.load_card_and_text(image_path_1)
+            print(f"curround:1{image_path_1},name{name}")
             tar = self.convert_to_target_format(img)
             result["images"][0]=tar
             result["texts"][0]=txt
             result["names"][0]=name
             all_card_name=all_card_name+txt+","
         if cur_round==2:
-            img, txt,name = self.load_card_and_text("")
+            img, txt,name = self.load_card_and_text(image_path_1)
+            print(f"curround:2{image_path_1},name{name}")
             tar = self.convert_to_target_format(img)
-            result["images"][1]=tar
-            result["texts"][1]=txt
+            result["images"][0]=tar
+            result["texts"][0]=txt
+            result["names"][0]=name
+            all_card_name = all_card_name + txt + ","
+
+            img, txt,name = self.load_card_and_text("")
+            print(f"curround:3：image_path_2：{image_path_2},name{name}")
+            tar = self.convert_to_target_format(img)
+            result["images"][1] = tar
+            result["texts"][1]= txt
             result["names"][1]=name
             all_card_name = all_card_name + txt + ","
+
         if cur_round == 3:
-            img, txt,name = self.load_card_and_text("")
+            img, txt,name = self.load_card_and_text(image_path_1)
+
+            tar = self.convert_to_target_format(img)
+            result["images"][0]=tar
+            result["texts"][0]=txt
+            result["names"][0]=name
+            all_card_name = all_card_name + txt + ","
+
+            img, txt,name = self.load_card_and_text(image_path_2)
+
+            tar = self.convert_to_target_format(img)
+            result["images"][1] = tar
+            result["texts"][1]= txt
+            result["names"][1]=name
+            all_card_name = all_card_name + txt + ","
+            img, txt,name = self.load_card_and_text(image_path_3)
+
             tar = self.convert_to_target_format(img)
             result["images"][2] = tar
             result["texts"][2]= txt
             result["names"][2]=name
             all_card_name = all_card_name + txt + ","
         # 循环执行塔罗牌相关作业
+        print(f"all flag{all_flag}")
         if all_flag==1:
             for i in range(cur_round):
             # 抽取塔罗牌对象
             # 转换为目标格式
                 img,txt,name=self.load_card_and_text("")
                 tar = self.convert_to_target_format(img)
-            # 更新结果
                 result["images"][i] = tar
                 result["texts"][i] = txt
                 result["names"][i] = name
-                all_card_name=all_card_name+txt+","
+                all_card_name = all_card_name + txt + ","
 
         # 返回结果
-        return (result["images"][0], result["images"][1], result["images"][2], \
+
+        return(result["images"][0], result["images"][1], result["images"][2],\
             result["texts"][0], result["texts"][1], result["texts"][2],\
             result["names"][0], result["names"][1], result["names"][2],cur_round,all_card_name)
 
     def load_card_and_text(self,path=''):
+        isReversed = False
+        print(f"Current path value:{path}")
+        if path!='':
+            # 根据路径读取图片，判断是否是翻转的图片
+            if "Reversed" in path:
+                isReversed = True
+                path = path.replace("Reversed", "")  # 替换翻转图片路径
 
         drawn_cards = self.load_tarotCard(1,path)
         name=drawn_cards[0].image_path
         images, flags = load_image(drawn_cards)
+        # 翻转图片
+        if isReversed:
+            images[0] = images[0].rotate(180)  # 将图像旋转 180 度
+            flags[0] = 1 #重置标识
+
         txt= load_text(drawn_cards)
         # 合并塔罗牌图片
         txt = txt.rstrip(',') if txt.endswith(',') else txt
@@ -339,6 +383,7 @@ class TarotDealCard:
 
         if str(flags[0]) == "1":
             txt=txt + "(Reversed)"
+            name="Reversed"+name  #标记是翻转图片的路径
 
         return img,txt,name,
 
@@ -351,14 +396,6 @@ class TarotDealCard:
         drawn_cards = tarotDeck.draw(card_nums)
         # 根据路径抽排
         if path != '':
-            if os.name == 'posix':  # Linux 或 macOS
-                path = path.replace('\\', '/')  # 确保路径使用 '/'
-                if not path.startswith('/'):
-                    path = '/' + path  # 确保路径以 '/' 开头（假设是绝对路径）
-            elif os.name == 'nt':  # Windows
-                path = path.replace('/', '\\')  # 确保路径使用 '\'
-                if not path.startswith('\\') and ':' not in path:
-                    path = '\\\\' + path  # 确保路径以 '\\\' 开头（假设是 UNC 路径）
             for tarCar in tarotDeck.create_deck():
                 if tarCar.image_path == path:
                     drawn_cards[0] = tarCar
