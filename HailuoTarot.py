@@ -13,6 +13,7 @@ from PIL import Image
 from typing import List, Tuple
 import shutil
 import subprocess
+import platform
 
 class TarotCard:
     def __init__(self, name: str, description: str, meaning: str, image_path: str):
@@ -143,7 +144,7 @@ def load_text(drawn_cards: List[TarotCard]) -> str:
 # 读取随机抽取的塔罗牌图片结果集
 
 
-def load_image(drawn_cards: List[TarotCard]) -> Tuple[List[Image.Image], List[int]]:
+def load_image(drawn_cards: List[TarotCard],path='') -> Tuple[List[Image.Image], List[int]]:
     """
     加载塔罗牌图像，并根据时间戳随机决定是否翻转图像。
     :param drawn_cards: 塔罗牌对象列表。
@@ -172,8 +173,13 @@ def load_image(drawn_cards: List[TarotCard]) -> Tuple[List[Image.Image], List[in
         # 根据 35% 的概率决定是否翻转图像
         random.seed(time.time())
         if random.random() < 0.35:  # random.random() 生成 [0, 1) 之间的随机数
-            img = img.rotate(180)  # 将图像旋转 180 度
-            flip_flags.append(1)  # 记录翻转标志为 1
+            print(f'是否历史牌path：{path}')
+            if path=='':
+                img = img.rotate(180)  # 将图像旋转 180 度
+                flip_flags.append(1)  # 记录翻转标志为 1
+            else:
+                flip_flags.append(0)  # 记录翻转标志为 0
+            print(f'是否反转flip_flags[0]：{flip_flags[0]}')
         else:
             flip_flags.append(0)  # 记录翻转标志为 0
 
@@ -316,7 +322,7 @@ class TarotDealCard:
             all_card_name=all_card_name+txt+","
         if cur_round==2:
             img, txt,name = self.load_card_and_text(image_path_1)
-            print(f"curround:2{image_path_1},name{name}")
+            print(f"curround:2{image_path_1},name:{name}")
             tar = self.convert_to_target_format(img)
             result["images"][0]=tar
             result["texts"][0]=txt
@@ -384,11 +390,13 @@ class TarotDealCard:
 
         drawn_cards = self.load_tarotCard(1,path)
         name=drawn_cards[0].image_path
-        images, flags = load_image(drawn_cards)
+        images, flags = load_image(drawn_cards,path)
+        print(f'flags[0]:{flags[0]}')
+        print(f'isReversed：{isReversed}，{isReversed == True}')
         # 翻转图片
-        if isReversed:
+        if isReversed == True:            
             images[0] = images[0].rotate(180)  # 将图像旋转 180 度
-            flags[0] = 1 #重置标识
+            flags[0] = "1" #重置标识
 
         txt= load_text(drawn_cards)
         # 合并塔罗牌图片
@@ -488,13 +496,21 @@ class TarotDealCard:
     @staticmethod
     def refresh_font_cache():
         """
-        刷新字体缓存
+        刷新字体缓存（跨平台）
         """
+        system = platform.system()
         try:
-            subprocess.run(["fc-cache", "-f"], capture_output=True, check=True)
-            print("字体缓存刷新完成！")
-        except subprocess.CalledProcessError:
-            print("刷新字体缓存失败，请确保系统支持 fc-cache 工具！")
+            if system == "Linux":
+                subprocess.run(["fc-cache", "-f"], capture_output=True, check=True)
+                print("字体缓存刷新完成！")
+            elif system == "Windows":
+                subprocess.run(["powershell", "Start-Process", "C:\\Windows\\System32\\control.exe", "-ArgumentList",
+                                "'C:\\Windows\\Fonts'"], check=True)
+                print("字体缓存刷新完成！")
+            else:
+                print(f"不支持的操作系统：{system}，无法刷新字体缓存！")
+        except subprocess.CalledProcessError as e:
+            print(f"刷新字体缓存失败：{e}")
 
     def install_font_batch(self):
         """
