@@ -11,6 +11,8 @@ import time
 import random
 from PIL import Image
 from typing import List, Tuple
+import shutil
+import subprocess
 
 class TarotCard:
     def __init__(self, name: str, description: str, meaning: str, image_path: str):
@@ -516,7 +518,7 @@ class TarotDealCard:
                     print(f"字体 {font_file} 安装失败：{e}")
 
         self.refresh_font_cache()
-        
+
 class LoadCardImage:
     @classmethod
     def INPUT_TYPES(s):
